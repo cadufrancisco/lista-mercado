@@ -1,0 +1,97 @@
+body {
+  font-family: sans-serif;
+  background-color: #f4f7f6;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.container {
+  background: white;
+  width: 100%;
+  max-width: 400px; /* No PC, ele fica fininho como um celular */
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.input-group {
+  display: flex;
+  gap: 10px; /* Espaço entre input e botão */
+  margin-bottom: 20px;
+}
+
+input {
+  flex: 1; /* O input ocupa todo o espaço disponível */
+  padding: 12px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  outline: none;
+}
+
+button {
+  background-color: #2ecc71;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+li {
+  list-style: none;
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between; /* Espaço entre o texto e o botão de excluir */
+  cursor: pointer;
+  align-items: center;
+}
+
+.comprado {
+  text-decoration: line-through;
+  color: #bbb;
+}
+
+.btnLixeira {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.btn-lixeira:hover {
+  transform: scale(1.2); /* Efeitozinho de crescer ao passar o mouse */
+}
+
+#listaForm {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+#resumo {
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+/* Definição da animação */
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Classe que aplicaremos no novo item */
+.animar-entrada {
+  animation: aparecer 0.3s ease-out forwards;
+}
