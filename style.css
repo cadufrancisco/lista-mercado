@@ -1,18 +1,25 @@
+* {
+  box-sizing: border-box; /* Aplica em TUDO para evitar quebras */
+}
+
 body {
+  margin: 0;
   font-family: sans-serif;
   background-color: #f4f7f6;
   display: flex;
   justify-content: center;
-  padding: 20px;
+  padding: 10px; /* Margem de segurança nas bordas do celular */
+  min-height: 100vh;
 }
 
 .container {
   background: white;
   width: 100%;
-  max-width: 400px; /* No PC, ele fica fininho como um celular */
+  max-width: 450px; /* No PC, ele fica fininho como um celular */
   padding: 20px;
   border-radius: 15px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  overflow-x: hidden; /* Garante que nada saia pela lateral */
 }
 
 .input-group {
