@@ -19,10 +19,10 @@ body {
   background: white;
   width: 100%;
   max-width: 450px; /* No PC, ele fica fininho como um celular */
-  padding: 20px;
+  padding: 15px;
   border-radius: 15px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-  overflow-x: hidden; /* Garante que nada saia pela lateral */
+  box-sizing: border-box;
 }
 
 .input-group {
@@ -106,15 +106,17 @@ li {
 
 #btnLimparHistorico {
   width: 100%; /* Ocupa a largura toda, mas na HORIZONTAL */
-  background: #e74c3c;
+  height: auto; /* Garante que não fique alto demais */
+  background-color: #e74c3c;
   color: white;
   border: none;
   padding: 12px;
   border-radius: 8px;
-  margin-top: 20px;
+  margin-top: 30px; /* Empurra ele bem para baixo do histórico */
   cursor: pointer;
   display: block; /* Garante que ele seja uma "barra" e não suba */
-  clear: both; /* Impede que elementos flutuem ao lado dele */
+  font-weight: bold;
+  cursor: pointer;
 }
 
 /* Definição da animação */
@@ -183,10 +185,27 @@ li {
   font-size: 0.9rem;
 }
 
-/* Garante que o grupo de input não deixe nada subir para o lado */
-.input-group,
+/* O formulário de adicionar (Input + Botão) */
 #listaForm {
   display: flex;
   width: 100%;
+  gap: 8px;
+  margin-bottom: 20px;
+  position: relative; /* Garante que ele fique no fluxo normal */
+}
+
+/* Garante que o grupo de input não deixe nada subir para o lado */
+.input-group {
+  display: flex;
+  width: 100%;
   margin-bottom: 15px;
+}
+
+/* Garante que a lista não deixe nada subir */
+#lista,
+#listaHistorico {
+  width: 100%;
+  padding: 0;
+  margin: 10px 0;
+  list-style: none;
 }
