@@ -13,6 +13,9 @@ body {
 }
 
 .container {
+  display: flex;
+  flex-direction: column; /* Organiza tudo um abaixo do outro */
+  gap: 10px; /* Cria um espaço padrão entre todos os elementos */
   background: white;
   width: 100%;
   max-width: 450px; /* No PC, ele fica fininho como um celular */
@@ -102,9 +105,16 @@ li {
 }
 
 #btnLimparHistorico {
+  width: 100%; /* Ocupa a largura toda, mas na HORIZONTAL */
   background: #e74c3c;
-  margin-top: 15px;
-  font-size: 0.8rem;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 20px;
+  cursor: pointer;
+  display: block; /* Garante que ele seja uma "barra" e não suba */
+  clear: both; /* Impede que elementos flutuem ao lado dele */
 }
 
 /* Definição da animação */
@@ -171,4 +181,12 @@ li {
   border-bottom: 1px solid #eee;
   padding: 8px 0;
   font-size: 0.9rem;
+}
+
+/* Garante que o grupo de input não deixe nada subir para o lado */
+.input-group,
+#listaForm {
+  display: flex;
+  width: 100%;
+  margin-bottom: 15px;
 }
