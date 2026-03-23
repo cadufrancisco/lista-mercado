@@ -5,6 +5,7 @@ const listaUl = document.querySelector("#lista");
 const btnLimpar = document.querySelector("#btnLimpar");
 const listaForm = document.querySelector("#listaForm");
 const resumo = document.querySelector("#resumo");
+const btnFinalizar = document.querySelector("#btnFinalizar");
 
 listaForm.addEventListener("submit", (evento) => {
   evento.preventDefault(); // IMPORTANTE: Impede a página de recarregar
@@ -22,100 +23,73 @@ let listaCompras = JSON.parse(localStorage.getItem("minha_lista")) || [];
 // 3. FUNÇÃO PARA RENDERIZAR (Desenhar na tela)
 function renderizar() {
   const listaUl = document.querySelector("#lista");
-  //listaUl.innerHTML = ""; // Limpa a lista antes de desenhar
+  listaUl.innerHTML = "";
 
-  // GARANTIA: Limpa tudo antes de começar
-  while (listaUl.firstChild) {
-    listaUl.removeChild(listaUl.firstChild);
-  }
-
+  // 1. DESENHAR OS ITENS
   listaCompras.forEach((item, index) => {
     const li = document.createElement("li");
-    //li.innerText = item.nome;
 
-    // APLICA A ANIMAÇÃO AQUI
-    li.classList.add("animar-entrada");
+    // Container para o nome e preço
+    const spanNome = document.createElement("span");
+    spanNome.innerText = item.nome;
 
-    // Criamos um container para o texto para separar do botão
-    const texto = document.createElement("span");
-    texto.innerText = item.nome;
-    if (item.comprado) texto.classList.add("comprado");
+    // AQUI: Se estiver comprado, risca o SPAN do nome
+    if (item.comprado) {
+      spanNome.classList.add("comprado");
+    }
 
-    // Botão de remover (Lixeira)
+    // AQUI: Adiciona a tag de preço se houver valor
+    if (item.valor > 0) {
+      const spanPreco = document.createElement("span");
+      spanPreco.innerText = `R$ ${item.valor.toFixed(2)}`;
+      spanPreco.classList.add("preco-tag");
+      spanNome.appendChild(spanPreco);
+    }
+
+    // Botão de remover
     const btnRemover = document.createElement("button");
     btnRemover.innerText = "🗑️";
+    btnRemover.className = "btn-lixeira";
     btnRemover.onclick = (e) => {
       e.stopPropagation();
       listaCompras.splice(index, 1);
       renderizar();
     };
 
-    li.appendChild(texto);
-    li.appendChild(btnRemover);
-
-    // Clique na linha toda para dar baixa
+    // Clique na linha para dar baixa
     li.onclick = () => {
-      item.comprado = !item.comprado;
-      renderizar();
-    };
-
-    listaUl.appendChild(li);
-  });
-  /*
-    // Criamos um span para o nome do item
-    const spanNome = document.createElement("span");
-    spanNome.innerText = item.nome;
-    if (item.comprado) spanNome.classList.add("comprado");
-
-    // Se estiver comprado, adiciona a classe CSS que criamos
-    // if (item.comprado) li.classList.add("comprado");
-
-    // Clique no nome para dar baixa (o que já tínhamos)
-    spanNome.onclick = () => {
-      item.comprado = !item.comprado;
-      renderizar();
-    };
-
-    // 1. CRIAR A LIXEIRA
-    const btnRemover = document.createElement("button");
-    btnRemover.innerText = "🗑️"; // Pode usar um emoji ou ícone
-    btnRemover.classList.add("btn-lixeira");
-
-    // 2. LÓGICA DE EXCLUIR
-    btnRemover.onclick = (e) => {
-      e.stopPropagation(); // Impede que o clique "acerte" o li e dê baixa sem querer
-      listaCompras.splice(index, 1); // Remove 1 item na posição 'index'
+      if (!item.comprado) {
+        let preco = prompt(`Qual o valor de ${item.nome}?`, "0.00");
+        if (preco !== null) {
+          // Só marca se não cancelar o prompt
+          item.valor = parseFloat(preco.replace(",", ".")) || 0;
+          item.comprado = true;
+        }
+      } else {
+        item.comprado = false;
+        item.valor = 0;
+      }
       renderizar();
     };
 
     li.appendChild(spanNome);
     li.appendChild(btnRemover);
     listaUl.appendChild(li);
-
-    // Clique para "Dar Baixa"
-    li.onclick = () => {
-      listaCompras[index].comprado = !listaCompras[index].comprado;
-      salvarERenderizar();
-    };
-
-    listaUl.appendChild(li);
   });
-*/
 
-  // --- LÓGICA DO CONTADOR ---
-  const total = listaCompras.length;
-  const comprados = listaCompras.filter((item) => item.comprado).length;
+  // 2. ATUALIZAR O RESUMO (Fora do forEach)
+  const totalItens = listaCompras.length;
+  const comprados = listaCompras.filter((i) => i.comprado).length;
+  const totalDinheiro = listaCompras.reduce(
+    (soma, i) => soma + (i.valor || 0),
+    0,
+  );
 
-  resumo.innerText = `Itens: ${total} | Comprados: ${comprados}`;
+  document.querySelector("#resumo").innerHTML = `
+    Itens: ${totalItens} | Comprados: ${comprados} | 
+    <strong>Total: R$ ${totalDinheiro.toFixed(2)}</strong>
+  `;
 
-  // Dica visual: Se todos forem comprados, mude a cor do contador!
-  if (total > 0 && total === comprados) {
-    resumo.style.color = "green";
-    resumo.innerText += " ✅ Tudo pronto!";
-  } else {
-    resumo.style.color = "black";
-  }
-  // Salva no "caderninho" do navegador
   localStorage.setItem("minha_lista", JSON.stringify(listaCompras));
 }
 
@@ -140,5 +114,114 @@ btnLimpar.onclick = () => {
   salvarERenderizar();
 };
 
+btnFinalizar.onclick = () => {
+  if (listaCompras.length === 0) return alert("Sua lista está vazia!");
+
+  const confirmacao = confirm("Deseja salvar no histórico e limpar a lista?");
+  if (confirmacao) {
+    let historico = JSON.parse(localStorage.getItem("historico_compras")) || [];
+    //const totalCompra = listaCompras.reduce((s, i) => s + (i.valor || 0), 0);
+
+    // Agora salvamos a CÓPIA da lista atual dentro do histórico
+    historico.push({
+      data: new Date().toLocaleDateString("pt-BR"),
+      //total: totalCompra,
+      //itens: listaCompras.length,
+      total: listaCompras.reduce((s, i) => s + (i.valor || 0), 0),
+      itensDetalhados: [...listaCompras], // Aqui salvamos os nomes e preços!
+    });
+
+    localStorage.setItem("historico_compras", JSON.stringify(historico));
+    listaCompras = []; // Limpa a lista atual
+    renderizar();
+    renderizarHistorico();
+    alert("Compra salva com sucesso!");
+  }
+};
+
+function renderizarHistorico() {
+  const listaHistoricoUl = document.querySelector("#listaHistorico");
+  const historico = JSON.parse(localStorage.getItem("historico_compras")) || [];
+
+  if (!listaHistoricoUl) return;
+  listaHistoricoUl.innerHTML = ""; // Limpa antes de desenhar
+
+  // Vamos mostrar do mais novo para o mais antigo (.reverse)
+  historico.reverse().forEach((compra, index) => {
+    const li = document.createElement("li");
+    li.style.cursor = "pointer"; // Muda o mouse para a mãozinha
+    //li.onclick = () => abrirDetalhes(index); // Chama a função que criamos acima
+
+    // O ?. garante que se a compra for antiga e não tiver itensDetalhados, o site não trava
+    const qtdItens = compra.itensDetalhados?.length || 0;
+
+    li.innerHTML = `
+      <div>
+        <strong>Data:</strong> ${compra.data} <br>
+        <small>${compra.itensDetalhados.length} itens</small>
+      </div>
+      <strong style="color: #27ae60;">R$ ${compra.total.toFixed(2)}</strong>
+    `;
+
+    // Conecta a função de abrir o Modal
+    li.onclick = () => abrirDetalhes(index);
+
+    listaHistoricoUl.appendChild(li);
+  });
+}
+
+// Função para abrir o Modal com os itens
+function abrirDetalhes(index) {
+  const historico = JSON.parse(localStorage.getItem("historico_compras")) || [];
+  // Como usamos .reverse() na tela, precisamos pegar o índice real
+  const compra = [...historico].reverse()[index];
+
+  const modal = document.querySelector("#modalDetalhes");
+  const listaItens = document.querySelector("#modalListaItens");
+  const totalTxt = document.querySelector("#modalTotal");
+
+  listaItens.innerHTML = "";
+  document.querySelector("#modalTitulo").innerText = `Compra: ${compra.data}`;
+
+  compra.itensDetalhados.forEach((item) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span>${item.nome}</span> <strong>R$ ${item.valor.toFixed(2)}</strong>`;
+    listaItens.appendChild(li);
+  });
+
+  totalTxt.innerText = `Total: R$ ${compra.total.toFixed(2)}`;
+  modal.style.display = "flex";
+}
+
+// Fechar Modal
+document.querySelector("#fecharModal").onclick = () => {
+  document.querySelector("#modalDetalhes").style.display = "none";
+};
+
+// Botão Limpar Histórico
+document.querySelector("#btnLimparHistorico").onclick = () => {
+  if (confirm("Tem certeza que deseja apagar todo o histórico?")) {
+    localStorage.removeItem("historico_compras");
+    renderizarHistorico();
+  }
+};
+
+function verDetalhes(index) {
+  const historico = JSON.parse(localStorage.getItem("historico_compras")) || [];
+  const compra = historico.reverse()[index]; // Pegamos a compra certa
+
+  // Montamos o texto da lista
+  let textoLista = `Compra do dia ${compra.data}:\n\n`;
+
+  compra.itensDetalhados.forEach((item) => {
+    textoLista += `- ${item.nome}: R$ ${item.valor.toFixed(2)}\n`;
+  });
+
+  textoLista += `\nTOTAL: R$ ${compra.total.toFixed(2)}`;
+
+  alert(textoLista); // Mostra a lista completa em um pop-up
+}
+
 // Iniciar a tela pela primeira vez
 renderizar();
+renderizarHistorico();

@@ -26,7 +26,32 @@
       </ul>
 
       <button id="btnLimpar" class="btn-secundario">Limpar Comprados</button>
+
+      <p id="resumo">
+        Itens: 0 | Comprados: 0 |
+        <strong>Total: R$ <span id="valorTotal">0.00</span></strong>
+      </p>
+
+      <button id="btnFinalizar" class="btn-primario">Finalizar Compras</button>
+      <div id="secaoHistorico">
+        <h3>Histórico de Compras</h3>
+        <ul id="listaHistorico"></ul>
+      </div>
     </div>
+    <!-- Janela Modal -->
+    <div id="modalDetalhes" class="modal-overlay" style="display: none">
+      <div class="modal-content">
+        <span id="fecharModal" class="btn-fechar">&times;</span>
+        <h2 id="modalTitulo">Detalhes da Compra</h2>
+        <hr />
+        <ul id="modalListaItens"></ul>
+        <h3 id="modalTotal" style="text-align: right; color: #27ae60"></h3>
+      </div>
+    </div>
+
+    <!-- Botão para limpar o histórico -->
+    <button id="btnLimparHistorico">Limpar Todo Histórico</button>
+
     <script src="script.js"></script>
   </body>
 </html>
