@@ -1,3 +1,37 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  onSnapshot,
+  setDoc,
+} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA0nNYUJ4aRAM-Z4LdzDIC6uvrOaZIKgaU", // Pegue na engrenagem do Firebase
+  authDomain: "lista-mercado-99783.firebaseapp.com",
+  projectId: "lista-mercado-99783",
+  storageBucket: "lista-mercado-99783.appspot.com",
+  messagingSenderId: "676651330576",
+  appId: "1:676651330576:web:c5828986c381b9080fae95",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const docRef = doc(db, "compras", "lista_familia");
+
+// --- SINCRONIZAÇÃO EM TEMPO REAL ---
+onSnapshot(docRef, (snap) => {
+  if (snap.exists()) {
+    listaCompras = snap.data().itens || [];
+    renderizar(); // Desenha na tela sempre que alguém mudar algo
+  }
+});
+
+// Substitua sua função de salvar por esta:
+async function salvarNoFirebase() {
+  await setDoc(docRef, { itens: listaCompras });
+}
+
 // 1. SELEÇÃO DE ELEMENTOS
 const inputItem = document.querySelector("#inputItem");
 const btnAdicionar = document.querySelector("#btnAdicionar");
@@ -13,12 +47,14 @@ listaForm.addEventListener("submit", (evento) => {
   const nome = inputItem.value.trim();
   if (nome !== "") {
     listaCompras.push({ nome: nome, comprado: false });
+    salvarNoFirebase();
     inputItem.value = "";
     renderizar();
   }
 });
 // 2. CARREGAR DADOS (Busca o que está salvo ou começa com lista vazia)
-let listaCompras = JSON.parse(localStorage.getItem("minha_lista")) || [];
+//let listaCompras = JSON.parse(localStorage.getItem("minha_lista")) || [];
+let listaCompras = [];
 
 // 3. FUNÇÃO PARA RENDERIZAR (Desenhar na tela)
 function renderizar() {
@@ -53,6 +89,7 @@ function renderizar() {
     btnRemover.onclick = (e) => {
       e.stopPropagation();
       listaCompras.splice(index, 1);
+      salvarNoFirebase();
       renderizar();
     };
 
@@ -64,6 +101,7 @@ function renderizar() {
           // Só marca se não cancelar o prompt
           item.valor = parseFloat(preco.replace(",", ".")) || 0;
           item.comprado = true;
+          salvarNoFirebase();
         }
       } else {
         item.comprado = false;
@@ -90,7 +128,8 @@ function renderizar() {
     <strong>Total: R$ ${totalDinheiro.toFixed(2)}</strong>
   `;
 
-  localStorage.setItem("minha_lista", JSON.stringify(listaCompras));
+  //localStorage.setItem("minha_lista", JSON.stringify(listaCompras));
+  salvarNoFirebase(listaCompras);
 }
 
 function salvarERenderizar() {
