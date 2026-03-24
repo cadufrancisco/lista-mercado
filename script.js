@@ -9,6 +9,7 @@ import {
   onSnapshot,
   setDoc,
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+import { onSnapshot } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA0nNYUJ4aRAM-Z4LdzDIC6uvrOaZIKgaU", // Pegue na engrenagem do Firebase
@@ -30,6 +31,16 @@ onSnapshot(docRef, (snap) => {
     listaCompras = snap.data().itens || [];
     renderizar(); // Desenha na tela sempre que alguém mudar algo
   }
+});
+
+onSnapshot(historicoRef, (snapshot) => {
+  const historico = [];
+
+  snapshot.forEach((doc) => {
+    historico.push(doc.data());
+  });
+
+  renderizarHistorico(historico);
 });
 
 // Substitua sua função de salvar por esta:
@@ -185,35 +196,38 @@ btnLimpar.onclick = () => {
   salvarERenderizar();
 };
 
-btnFinalizar.onclick = () => {
+btnFinalizar.onclick = async () => {
   if (listaCompras.length === 0) return alert("Sua lista está vazia!");
 
   const confirmacao = confirm("Deseja salvar no histórico e limpar a lista?");
-  if (confirmacao) {
-    let historico = JSON.parse(localStorage.getItem("historico_compras")) || [];
-    //const totalCompra = listaCompras.reduce((s, i) => s + (i.valor || 0), 0);
+  if (confirmacao) return;
+  //let historico = JSON.parse(localStorage.getItem("historico_compras")) || [];
+  //const totalCompra = listaCompras.reduce((s, i) => s + (i.valor || 0), 0);
+  await addDoc(historicoRef, {
+    data: new Date().toLocaleDateString("pt-BR"),
+    total: listaCompras.reduce((s, i) => s + (i.valor || 0), 0),
+    itensDetalhados: listaCompras,
+  });
+  // Agora salvamos a CÓPIA da lista atual dentro do histórico
+  historico.push({
+    data: new Date().toLocaleDateString("pt-BR"),
+    //total: totalCompra,
+    //itens: listaCompras.length,
+    total: listaCompras.reduce((s, i) => s + (i.valor || 0), 0),
+    itensDetalhados: [...listaCompras], // Aqui salvamos os nomes e preços!
+  });
 
-    // Agora salvamos a CÓPIA da lista atual dentro do histórico
-    historico.push({
-      data: new Date().toLocaleDateString("pt-BR"),
-      //total: totalCompra,
-      //itens: listaCompras.length,
-      total: listaCompras.reduce((s, i) => s + (i.valor || 0), 0),
-      itensDetalhados: [...listaCompras], // Aqui salvamos os nomes e preços!
-    });
-
-    localStorage.setItem("historico_compras", JSON.stringify(historico));
-    listaCompras = []; // Limpa a lista atual
-    salvarNoFirebase();
-    renderizar();
-    renderizarHistorico();
-    alert("Compra salva com sucesso!");
-  }
+  //localStorage.setItem("historico_compras", JSON.stringify(historico));
+  listaCompras = []; // Limpa a lista atual
+  salvarNoFirebase();
+  renderizar();
+  renderizarHistorico();
+  alert("Compra salva com sucesso!");
 };
 
-function renderizarHistorico() {
+function renderizarHistorico(historico) {
   const listaHistoricoUl = document.querySelector("#listaHistorico");
-  const historico = JSON.parse(localStorage.getItem("historico_compras")) || [];
+  //const historico = JSON.parse(localStorage.getItem("historico_compras")) || [];
 
   if (!listaHistoricoUl) return;
   listaHistoricoUl.innerHTML = ""; // Limpa antes de desenhar
@@ -244,7 +258,7 @@ function renderizarHistorico() {
 
 // Função para abrir o Modal com os itens
 function abrirDetalhes(index) {
-  const historico = JSON.parse(localStorage.getItem("historico_compras")) || [];
+  //const historico = JSON.parse(localStorage.getItem("historico_compras")) || [];
   // Como usamos .reverse() na tela, precisamos pegar o índice real
   const compra = [...historico].reverse()[index];
 
@@ -257,7 +271,8 @@ function abrirDetalhes(index) {
 
   compra.itensDetalhados.forEach((item) => {
     const li = document.createElement("li");
-    li.innerHTML = `<span>${item.nome}</span> <strong>R$ ${item.valor.toFixed(2)}</strong>`;
+    li.innerHTML = `<span>${item.nome} (${item.quantidade || 1})</span>
+    <strong>R$ ${item.valor.toFixed(2)}</strong>`;
     listaItens.appendChild(li);
   });
 
@@ -273,13 +288,13 @@ document.querySelector("#fecharModal").onclick = () => {
 // Botão Limpar Histórico
 document.querySelector("#btnLimparHistorico").onclick = () => {
   if (confirm("Tem certeza que deseja apagar todo o histórico?")) {
-    localStorage.removeItem("historico_compras");
+    //localStorage.removeItem("historico_compras");
     renderizarHistorico();
   }
 };
 
 function verDetalhes(index) {
-  const historico = JSON.parse(localStorage.getItem("historico_compras")) || [];
+  //const historico = JSON.parse(localStorage.getItem("historico_compras")) || [];
   const compra = historico.reverse()[index]; // Pegamos a compra certa
 
   // Montamos o texto da lista
