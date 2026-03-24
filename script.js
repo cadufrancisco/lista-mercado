@@ -1,3 +1,7 @@
+import {
+  collection,
+  addDoc,
+} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import {
   getFirestore,
@@ -18,6 +22,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const docRef = doc(db, "compras", "lista_familia");
+const historicoRef = collection(db, "historico");
 
 // --- SINCRONIZAÇÃO EM TEMPO REAL ---
 onSnapshot(docRef, (snap) => {
@@ -40,24 +45,42 @@ const btnLimpar = document.querySelector("#btnLimpar");
 const listaForm = document.querySelector("#listaForm");
 const resumo = document.querySelector("#resumo");
 const btnFinalizar = document.querySelector("#btnFinalizar");
+const inputQtd = document.querySelector("#inputQtd");
+const quantidade = parseInt(inputQtd.value) || 1;
 
 listaForm.addEventListener("submit", (evento) => {
   evento.preventDefault(); // IMPORTANTE: Impede a página de recarregar
 
   const nome = inputItem.value.trim();
+  const quantidade = parseInt(inputQtd.value);
   if (nome !== "") {
-    listaCompras.push({ nome: nome, comprado: false });
+    listaCompras.push({
+      nome: nome,
+      quantidade: quantidade > 0 ? quantidade : 1,
+      comprado: false,
+    });
     salvarNoFirebase();
     inputItem.value = "";
+    inputQtd.value = "1"; // reseta depois de adicionar
+    inputItem.focus();
     renderizar();
   }
 });
+
+/*const quantidade = parseInt(inputQtd.value) || 1;
+
+listaCompras.push({
+  nome: nome,
+  quantidade: quantidade,
+  comprado: false,
+});
+*/
 // 2. CARREGAR DADOS (Busca o que está salvo ou começa com lista vazia)
 //let listaCompras = JSON.parse(localStorage.getItem("minha_lista")) || [];
 let listaCompras = [];
 
 // 3. FUNÇÃO PARA RENDERIZAR (Desenhar na tela)
-function renderizar() {
+async function renderizar() {
   const listaUl = document.querySelector("#lista");
   listaUl.innerHTML = "";
 
@@ -67,7 +90,8 @@ function renderizar() {
 
     // Container para o nome e preço
     const spanNome = document.createElement("span");
-    spanNome.innerText = item.nome;
+    //spanNome.innerText = item.nome;
+    spanNome.innerText = `${item.nome} (${item.quantidade})`;
 
     // AQUI: Se estiver comprado, risca o SPAN do nome
     if (item.comprado) {
@@ -129,13 +153,21 @@ function renderizar() {
   `;
 
   //localStorage.setItem("minha_lista", JSON.stringify(listaCompras));
-  salvarNoFirebase(listaCompras);
+
+  /*
+  //salvarNoFirebase(listaCompras);
+  await addDoc(historicoRef, {
+    data: new Date().toLocaleDateString("pt-BR"),
+    total: listaCompras.reduce((s, i) => s + (i.valor || 0), 0),
+    itensDetalhados: listaCompras,
+  });
+  */
 }
 
 function salvarERenderizar() {
   renderizar();
 }
-
+/*
 // 4. EVENTO: ADICIONAR ITEM
 btnAdicionar.onclick = () => {
   const nome = inputItem.value.trim();
@@ -146,7 +178,7 @@ btnAdicionar.onclick = () => {
     salvarERenderizar();
   }
 };
-
+*/
 // 5. EVENTO: LIMPAR COMPRADOS (O famoso Filter!)
 btnLimpar.onclick = () => {
   listaCompras = listaCompras.filter((item) => !item.comprado);
@@ -172,6 +204,7 @@ btnFinalizar.onclick = () => {
 
     localStorage.setItem("historico_compras", JSON.stringify(historico));
     listaCompras = []; // Limpa a lista atual
+    salvarNoFirebase();
     renderizar();
     renderizarHistorico();
     alert("Compra salva com sucesso!");

@@ -209,3 +209,7 @@ li {
   margin: 10px 0;
   list-style: none;
 }
+
+#listaForm input[type="number"] {
+  width: 70px; /* Largura fixa para o campo de quantidade */
+}
