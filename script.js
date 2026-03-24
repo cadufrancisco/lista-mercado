@@ -1,15 +1,16 @@
 import {
-  collection,
-  addDoc,
-} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import {
   getFirestore,
   doc,
   onSnapshot,
   setDoc,
+  collection,
+  addDoc,
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
-import { onSnapshot } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import { deleteDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+import { getDocs } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+let historicoGlobal = [];
 
 const firebaseConfig = {
   apiKey: "AIzaSyA0nNYUJ4aRAM-Z4LdzDIC6uvrOaZIKgaU", // Pegue na engrenagem do Firebase
@@ -37,8 +38,10 @@ onSnapshot(historicoRef, (snapshot) => {
   const historico = [];
 
   snapshot.forEach((doc) => {
-    historico.push(doc.data());
+    id: (doc.id, historico.push(doc.data()));
   });
+
+  historicoGlobal = historico; // 🔥 salva globalmente
 
   renderizarHistorico(historico);
 });
@@ -57,6 +60,7 @@ const listaForm = document.querySelector("#listaForm");
 const resumo = document.querySelector("#resumo");
 const btnFinalizar = document.querySelector("#btnFinalizar");
 const inputQtd = document.querySelector("#inputQtd");
+const btnLimparHistorico = document.querySelector("#btnLimparHistorico");
 const quantidade = parseInt(inputQtd.value) || 1;
 
 listaForm.addEventListener("submit", (evento) => {
@@ -112,7 +116,9 @@ async function renderizar() {
     // AQUI: Adiciona a tag de preço se houver valor
     if (item.valor > 0) {
       const spanPreco = document.createElement("span");
-      spanPreco.innerText = `R$ ${item.valor.toFixed(2)}`;
+      //spanPreco.innerText = `R$ ${item.valor.toFixed(2)}`;
+      spanPreco.innerText = `R$ ${item.valor.toFixed(2)}
+       (${item.quantidade || 1}x ${item.valorUnitario?.toFixed(2) || "0.00"})`;
       spanPreco.classList.add("preco-tag");
       spanNome.appendChild(spanPreco);
     }
@@ -131,17 +137,41 @@ async function renderizar() {
     // Clique na linha para dar baixa
     li.onclick = () => {
       if (!item.comprado) {
-        let preco = prompt(`Qual o valor de ${item.nome}?`, "0.00");
+        let preco = prompt(`Valor unitário de ${item.nome}?`, "0.00");
+        //const valorUnitario = parseFloat(precoUnitario.replace(",", ".")) || 0;
         if (preco !== null) {
+          const precoUnitario = parseFloat(preco.replace(",", ".")) || 0;
+          item.valorUnitario = precoUnitario;
+          item.valor = precoUnitario * (item.quantidade || 1);
+          item.comprado = true;
+
+          salvarNoFirebase();
+        }
+      } else {
+        item.comprado = false;
+        item.valor = 0;
+        item.valorUnitario = 0;
+      }
+      /*
+        let preco = prompt(`Qual o valor de ${item.nome}?`, "0.00");
+        let precoUnitario = prompt(`Valor unitário de ${item.nome}?`, "0.00");
+        
+          item.valor = valorUnitario * item.quantidade;
+          item.valorUnitario = valorUnitario;
           // Só marca se não cancelar o prompt
           item.valor = parseFloat(preco.replace(",", ".")) || 0;
           item.comprado = true;
+          const valorUnitario = parseFloat(preco.replace(",", ".")) || 0;
+
+          item.valorUnitario = valorUnitario;
+          item.valor = valorUnitario * (item.quantidade || 1);
           salvarNoFirebase();
         }
       } else {
         item.comprado = false;
         item.valor = 0;
       }
+  */
       renderizar();
     };
 
@@ -191,31 +221,98 @@ btnAdicionar.onclick = () => {
 };
 */
 // 5. EVENTO: LIMPAR COMPRADOS (O famoso Filter!)
-btnLimpar.onclick = () => {
+/*btnLimpar.onclick = () => {
   listaCompras = listaCompras.filter((item) => !item.comprado);
   salvarERenderizar();
 };
+*/
+//let confirmarLimparHistorico = false;
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelector("#btnLimparHistorico");
+  btnLimparHistorico.onclick = async () => {
+    console.log("Cliquei no limpar histórico");
+    if (!confirm("Tem certeza que deseja apagar todo o histórico?")) return;
+
+    try {
+      const snapshot = await getDocs(historicoRef);
+
+      if (snapshot.empty) {
+        alert("Histórico já está vazio!");
+        return;
+      }
+
+      for (const docItem of snapshot.docs) {
+        await deleteDoc(docItem.ref);
+      }
+
+      console.log("Histórico apagado!");
+      alert("Histórico apagado com sucesso!");
+      //const promises = [];
+
+      /*   snapshot.forEach((docItem) => {
+        promises.push(deleteDoc(docItem.ref));
+      });
+
+      await Promise.all(promises);
+  */
+    } catch (erro) {
+      console.error("Erro ao limpar histórico:", erro);
+      alert("Erro ao apagar histórico.");
+    }
+  };
+});
+
+let confirmarFinalizacao = false;
 
 btnFinalizar.onclick = async () => {
-  if (listaCompras.length === 0) return alert("Sua lista está vazia!");
+  console.log("Finalizar clicado", listaCompras);
 
-  const confirmacao = confirm("Deseja salvar no histórico e limpar a lista?");
-  if (confirmacao) return;
-  //let historico = JSON.parse(localStorage.getItem("historico_compras")) || [];
-  //const totalCompra = listaCompras.reduce((s, i) => s + (i.valor || 0), 0);
-  await addDoc(historicoRef, {
-    data: new Date().toLocaleDateString("pt-BR"),
-    total: listaCompras.reduce((s, i) => s + (i.valor || 0), 0),
-    itensDetalhados: listaCompras,
-  });
-  // Agora salvamos a CÓPIA da lista atual dentro do histórico
-  historico.push({
-    data: new Date().toLocaleDateString("pt-BR"),
-    //total: totalCompra,
-    //itens: listaCompras.length,
-    total: listaCompras.reduce((s, i) => s + (i.valor || 0), 0),
-    itensDetalhados: [...listaCompras], // Aqui salvamos os nomes e preços!
-  });
+  if (listaCompras.length === 0) {
+    alert("Sua lista está vazia!");
+    return;
+  }
+
+  if (!confirmarFinalizacao) {
+    btnFinalizar.innerText = "Confirmar?";
+    confirmarFinalizacao = true;
+
+    setTimeout(() => {
+      btnFinalizar.innerText = "Finalizar Compras";
+      confirmarFinalizacao = false;
+    }, 3000);
+
+    return;
+  }
+  //const confirmacao = confirm("Deseja salvar no histórico e limpar a lista?");
+  //if (confirmacao) return;
+
+  try {
+    console.log("PASSOU DO CONFIRM");
+
+    const total = listaCompras.reduce((s, i) => s + (i.valor || 0), 0);
+    //if (total === 0) return;
+    console.log("Tentando salvar no Firebase...");
+    //let historico = JSON.parse(localStorage.getItem("historico_compras")) || [];
+    //const totalCompra = listaCompras.reduce((s, i) => s + (i.valor || 0), 0);
+    await addDoc(historicoRef, {
+      data: new Date().toLocaleDateString("pt-BR"),
+      //total: listaCompras.reduce((s, i) => s + (i.valor || 0), 0),
+      total: total,
+      //itensDetalhados: listaCompras,
+      itensDetalhados: JSON.parse(JSON.stringify(listaCompras)),
+    });
+
+    console.log("Salvo com sucesso!");
+
+    /*  // Agora salvamos a CÓPIA da lista atual dentro do histórico
+    historico.push({
+      data: new Date().toLocaleDateString("pt-BR"),
+      //total: totalCompra,
+      //itens: listaCompras.length,
+      total: listaCompras.reduce((s, i) => s + (i.valor || 0), 0),
+      itensDetalhados: [...listaCompras], // Aqui salvamos os nomes e preços!
+    });
 
   //localStorage.setItem("historico_compras", JSON.stringify(historico));
   listaCompras = []; // Limpa a lista atual
@@ -223,17 +320,27 @@ btnFinalizar.onclick = async () => {
   renderizar();
   renderizarHistorico();
   alert("Compra salva com sucesso!");
+*/ // limpa lista
+    listaCompras = [];
+    await salvarNoFirebase();
+
+    alert("Compra salva com sucesso!");
+  } catch (erro) {
+    console.error("Erro ao salvar no Firebase:", erro);
+    alert("Erro ao salvar. Veja o console.");
+  }
 };
 
 function renderizarHistorico(historico) {
-  const listaHistoricoUl = document.querySelector("#listaHistorico");
   //const historico = JSON.parse(localStorage.getItem("historico_compras")) || [];
 
-  if (!listaHistoricoUl) return;
+  if (!historico) return;
+
+  const listaHistoricoUl = document.querySelector("#listaHistorico");
   listaHistoricoUl.innerHTML = ""; // Limpa antes de desenhar
 
   // Vamos mostrar do mais novo para o mais antigo (.reverse)
-  historico.reverse().forEach((compra, index) => {
+  [...historico].reverse().forEach((compra, index) => {
     const li = document.createElement("li");
     li.style.cursor = "pointer"; // Muda o mouse para a mãozinha
     //li.onclick = () => abrirDetalhes(index); // Chama a função que criamos acima
@@ -244,9 +351,9 @@ function renderizarHistorico(historico) {
     li.innerHTML = `
       <div>
         <strong>Data:</strong> ${compra.data} <br>
-        <small>${compra.itensDetalhados.length} itens</small>
+        <small>${compra.itensDetalhados?.length || 0} itens</small>
       </div>
-      <strong style="color: #27ae60;">R$ ${compra.total.toFixed(2)}</strong>
+      <strong style="color: #27ae60;">R$ ${compra.total?.toFixed(2) || "0.00"}</strong>
     `;
 
     // Conecta a função de abrir o Modal
@@ -260,7 +367,9 @@ function renderizarHistorico(historico) {
 function abrirDetalhes(index) {
   //const historico = JSON.parse(localStorage.getItem("historico_compras")) || [];
   // Como usamos .reverse() na tela, precisamos pegar o índice real
-  const compra = [...historico].reverse()[index];
+  const compra = [...historicoGlobal].reverse()[index];
+
+  if (!compra) return;
 
   const modal = document.querySelector("#modalDetalhes");
   const listaItens = document.querySelector("#modalListaItens");
@@ -272,11 +381,11 @@ function abrirDetalhes(index) {
   compra.itensDetalhados.forEach((item) => {
     const li = document.createElement("li");
     li.innerHTML = `<span>${item.nome} (${item.quantidade || 1})</span>
-    <strong>R$ ${item.valor.toFixed(2)}</strong>`;
+    <strong>R$ ${item.valor?.toFixed(2) || "0.00"}</strong>`;
     listaItens.appendChild(li);
   });
 
-  totalTxt.innerText = `Total: R$ ${compra.total.toFixed(2)}`;
+  totalTxt.innerText = `Total: R$ ${compra.total?.toFixed(2) || "0.00"}`;
   modal.style.display = "flex";
 }
 
@@ -311,4 +420,4 @@ function verDetalhes(index) {
 
 // Iniciar a tela pela primeira vez
 renderizar();
-renderizarHistorico();
+//renderizarHistorico();
